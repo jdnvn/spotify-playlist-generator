@@ -80,62 +80,67 @@ sp = spotipy.Spotify(auth_manager=auth_manager)
 
 user_id = sp.me()['id']
 
-all_playlists = {}
+# get a dictionary of all user's playlists
+all_messy_playlists = []
 offset = 0
 while True:
   messy_playlists = sp.user_playlists(user_id, limit=50, offset=offset)['items']
   if len(messy_playlists) < 1: break
-  playlists = get_playlist_names(messy_playlists)
-  all_playlists.update(playlists)
+  all_messy_playlists += messy_playlists
+  offset += len(messy_playlists)
 
-  offset += len(playlists)
-
-print(len(all_playlists))
+all_playlists = get_playlist_names(all_messy_playlists)
 new_playlists = {}
 
-# # classify songs and store them in playlists based on their genre
-# offset = 700
-# start_point = offset
-# num_liked_tracks = 20
-# while offset < start_point + num_liked_tracks:
-#   # retrieve track IDs from user's saved library
-#   limit = 50 if (start_point + num_liked_tracks) - offset >= 50 else (start_point + num_liked_tracks) - offset
-#   track_list = sp.current_user_saved_tracks(limit=limit, offset=offset)['items']
-#   track_ids = get_track_ids(track_list)
 
-#   # obtain audio features from each track
-#   messy_track_features = sp.audio_features(track_ids)
-#   track_features = extract_features(messy_track_features)
+# classify tracks and add them to playlists based on their genre
+# offset: track to start from in library
+# num_liked_tracks: number of tracks to store in playlists
+offset = 900
+start_point = offset
+num_liked_tracks = 20
+while offset < start_point + num_liked_tracks:
+  # retrieve track IDs from user's saved library
+  limit = 50 if (start_point + num_liked_tracks) - offset >= 50 else (start_point + num_liked_tracks) - offset
+  track_list = sp.current_user_saved_tracks(limit=limit, offset=offset)['items']
+  if len(track_list) < 1: break
 
-#   y_pred = rf.predict(track_features)
+  track_ids = get_track_ids(track_list)
 
-#   genre_dict = {}
-#   for i, track_genre in enumerate(y_pred):
-#     track_id = track_ids[i]
-#     genre_ids = genre_dict.get(track_genre)
-#     if genre_ids:
-#       genre_ids.append(track_id)
-#     else:
-#       id_list = []
-#       id_list.append(track_id)
-#       genre_dict[track_genre] = id_list
+  # obtain audio features from each track
+  messy_track_features = sp.audio_features(track_ids)
+  track_features = extract_features(messy_track_features)
 
-#   # creates new playlist for genre or adds new one if nonexistant or desire to make a new one? cut sizes down to certain # ?
-#   # try sorting y_pred with track_ids and adding them en masse
-#   for genre, track_list in genre_dict.items():
-#     playlist_name = genre + ".py"
-#     playlist_id = playlists.get(playlist_name)
+  y_pred = rf.predict(track_features)
 
-#     if playlist_id is None:
-#       existing_playlist = new_playlists.get(playlist_name)
+  # store track ids in dictionary based on their genre
+  # key: genre, value: array of track ids of that genre
+  genre_dict = {}
+  for i, track_genre in enumerate(y_pred):
+    track_id = track_ids[i]
+    genre_ids = genre_dict.get(track_genre)
+    if genre_ids:
+      genre_ids.append(track_id)
+    else:
+      id_list = []
+      id_list.append(track_id)
+      genre_dict[track_genre] = id_list
 
-#       if existing_playlist:
-#         playlist_id = existing_playlist
-#       else:
-#         created_playlist = sp.user_playlist_create(user_id, playlist_name, public=True, collaborative=False, description='')
-#         playlist_id = created_playlist['id']
-#         new_playlists[playlist_name] = playlist_id
+  # creates new playlist for genre or adds new one if nonexistant or desire to make a new one? cut sizes down to certain # ?
+  for genre, track_list in genre_dict.items():
+    playlist_name = genre + ".py"
+    playlist_id = all_playlists.get(playlist_name)
 
-#     sp.playlist_add_items(playlist_id, track_list)
+    if playlist_id is None:
+      existing_playlist = new_playlists.get(playlist_name)
 
-#   offset += len(track_ids)
+      if existing_playlist:
+        playlist_id = existing_playlist
+      else:
+        created_playlist = sp.user_playlist_create(user_id, playlist_name, public=True, collaborative=False, description='')
+        playlist_id = created_playlist['id']
+        new_playlists[playlist_name] = playlist_id
+
+    sp.playlist_add_items(playlist_id, track_list)
+
+  offset += len(track_ids)
