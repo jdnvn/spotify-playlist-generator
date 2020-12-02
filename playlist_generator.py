@@ -85,7 +85,7 @@ playlists = get_playlist_names(messy_playlists)
 new_playlists = {}
 
 # classify songs and store them in playlists based on their genre
-offset = 500
+offset = 700
 start_point = offset
 num_liked_tracks = 20
 while offset < start_point + num_liked_tracks:
@@ -100,11 +100,21 @@ while offset < start_point + num_liked_tracks:
 
   y_pred = rf.predict(track_features)
 
-  # creates new playlist for genre or adds new one if nonexistant or desire to make a new one? cut sizes down to certain # ?
-  # try sorting y_pred with track_ids and adding them en masse
+  genre_dict = {}
   for i, track_genre in enumerate(y_pred):
     track_id = track_ids[i]
-    playlist_name = track_genre + ".py"
+    genre_ids = genre_dict.get(track_genre)
+    if genre_ids:
+      genre_ids.append(track_id)
+    else:
+      id_list = []
+      id_list.append(track_id)
+      genre_dict[track_genre] = id_list
+
+  # creates new playlist for genre or adds new one if nonexistant or desire to make a new one? cut sizes down to certain # ?
+  # try sorting y_pred with track_ids and adding them en masse
+  for genre, track_list in genre_dict.items():
+    playlist_name = genre + ".py"
     playlist_id = playlists.get(playlist_name)
 
     if playlist_id is None:
@@ -117,6 +127,6 @@ while offset < start_point + num_liked_tracks:
         playlist_id = created_playlist['id']
         new_playlists[playlist_name] = playlist_id
 
-    sp.playlist_add_items(playlist_id, [track_id])
+    sp.playlist_add_items(playlist_id, track_list)
 
   offset += len(track_ids)
