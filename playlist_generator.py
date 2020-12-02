@@ -15,6 +15,7 @@ def genre_cleaner(genres):
   genre = genre.split(" ")
   return genre[len(genre)-1]
 
+# cleans up track feature response to get only necessary features
 def extract_features(track_features):
   features_list = ["acousticness", "danceability", "duration_ms", "energy",
                    "instrumentalness", "liveness", "loudness", "speechiness", "tempo", "valence"]
@@ -28,7 +29,7 @@ def extract_features(track_features):
 
   return np.array(tracks)
 
-
+# takes in list of tracks and returns list of track ids
 def get_track_ids(track_list):
   track_ids = []
   for track in track_list:
@@ -36,17 +37,16 @@ def get_track_ids(track_list):
 
   return track_ids
 
-# returns dictionary of playlist names, ids
+# takes in list of playlist objects, returns dictionary of {playlist names: playlist ids}
 def get_playlist_names(playlists):
   playlist_dict = {}
   playlist_arr = []
   for playlist in playlists:
     playlist_dict[playlist['name']] = playlist['id']
-    # playlist_arr.append((playlist['name'], playlist['id']))
 
   return playlist_dict
 
-# takes in song data (data_w_genres.csv) from https://www.kaggle.com/yamaerenay/spotify-dataset-19212020-160k-tracks
+# reads song data (data_w_genres.csv) obtained from https://www.kaggle.com/yamaerenay/spotify-dataset-19212020-160k-tracks
 x_data = read_csv('./data.csv', converters={'genres': eval})
 
 # BEGIN WRANGLING THE DATA
@@ -68,6 +68,7 @@ y_data = x_data.pop('genres')
 # fit a multiclass random forest classifier with the track data
 rf = RandomForestClassifier(max_depth=10, max_features='sqrt')
 rf.fit(x_data, y_data)
+
 
 # Spotify App Info (PRIVATE STUFF)
 CLIENT_ID = 'e7441194747440368362319d0257aafc'
