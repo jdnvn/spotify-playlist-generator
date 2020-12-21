@@ -70,9 +70,9 @@ rf = RandomForestClassifier(max_depth=10, max_features='sqrt')
 rf.fit(x_data, y_data)
 
 
-# Spotify App Info (PRIVATE STUFF)
-CLIENT_ID = 'e7441194747440368362319d0257aafc'
-CLIENT_SECRET = 'b30ec668e6e045378d4194d5a014414f'
+# Spotify App Info
+CLIENT_ID = ''
+CLIENT_SECRET = ''
 scope = "user-library-read, playlist-modify-public, playlist-modify-private, playlist-read-private, playlist-read-collaborative"
 
 # set up oauth and obtain key
